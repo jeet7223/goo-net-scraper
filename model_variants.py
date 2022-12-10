@@ -1,6 +1,7 @@
 from requests_html import HTMLSession
 
 import configuration
+import saveImageToS3Bucket
 
 session = HTMLSession()
 from googletrans import Translator
@@ -14,7 +15,7 @@ mydb = mysql.connector.connect(
     charset=configuration.charset,
     auth_plugin=configuration.auth_plugin
 )
-
+cursor = mydb.cursor(dictionary=True)
 
 def saveVariants(mydb, model_id, title, title_en, image_url, description, description_en):
     mycursor = mydb.cursor()
@@ -55,35 +56,35 @@ def translate(word):
     except:
         return word
 
+
+def getMakerName(maker_id):
+    sql_maker_query = "select * from makers where id ={}".format(maker_id)
+    cursor.execute(sql_maker_query)
+    maker_data = cursor.fetchone()
+    return maker_data['maker_en']
+
 sql_select_query = "select * from models"
-cursor = mydb.cursor(dictionary=True)
+
 cursor.execute(sql_select_query)
 records = cursor.fetchall()
 
-makers = []
 for row in records:
     url = row["model_url"]
     model_id = row["id"]
-    makers.append(model_id)
+    maker_id = row["maker_id"]
+    maker_name = getMakerName(maker_id)
+    model_name_en = row["model_name_en"]
     supplier_response = session.get(url)
     product = supplier_response.html.find("#main", first=True).find(".box_gradeList")
 
     for item in product:
         title = item.find("h2", first=True).text
         title_en = translate(title)
-        image_url = item.find(".box_roundWhite", first=True).find(".img", first=True).xpath("//img/@src", first=True)
+        variant_image_raw_url = item.find(".box_roundWhite", first=True).find(".img", first=True).xpath("//img/@src", first=True)
+        variant_image_url = saveImageToS3Bucket.saveImageToBucket(variant_image_raw_url, "{} {}".format(model_name_en, title_en))
         description = item.find(".txt", first=True).text
         description_en = translate(description)
-
-        print("Model Id :- {}".format(model_id))
-        # print("Title :- {}".format(title))
-        print("Title in English :- {}".format(title_en))
-        # print("Image URL :- {}".format(image_url))
-        # print("Description :- {}".format(description))
-        # print("Description in English :- {}".format(description_en))
-
-        print("=========================================")
-        variant_id = saveVariants(mydb, model_id, title, title_en, image_url, description, description_en)
+        variant_id = saveVariants(mydb, model_id, title, title_en, variant_image_url, description, description_en)
 
         product_table = item.find(".bgTop", first=True).find(".grade")
         grade_table = item.find(".bgTop", first=True).find(".tbl_type03", first=True).find("tr")
@@ -111,48 +112,34 @@ for row in records:
             else:
                 continue
 
-            print("Model Variant Id :- {}".format(variant_id))
-            print("Grade Name :- {}".format(grade_name))
-            print("Grade Name in English :- {}".format(grade_name_en))
-            print("Model :- {}".format(model))
-            print("Displacement :- {}".format(displacement))
-            print("Number Of Doors :- {}".format(number_of_doors))
-            print("Shift :- {}".format(shift))
-            print("Drive System :- {}".format(drive_system))
-            print("Capacity :- {}".format(capacity))
-            print("Fuel Consumption :- {}".format(fuel_consumption))
-            print("New Price :- {}".format(new_price))
-            print("Grade URL :- {}".format(grade_url))
 
             number = url.split('/')[-2]
-            print("Number :- {}".format(number))
+
             get_grade_info = session.get(grade_url)
             grade_heading = get_grade_info.html.find(".tit_first", first=True).find("h2", first=True).text
             grade_heading_en = translate(grade_heading)
-            print("Grade Heading :- {}".format(grade_heading))
-            print("Grade Heading in English :- {}".format(grade_heading_en))
 
-            main_img_url = get_grade_info.html.find("#car_img_main", first=True).xpath("//img/@src", first=True)
-            print("Main Image :- {}".format(main_img_url))
 
+            main_grade_image_raw_url = get_grade_info.html.find("#car_img_main", first=True).xpath("//img/@src", first=True)
+
+            main_grade_image_url =  saveImageToS3Bucket.saveImageToBucket(main_grade_image_raw_url, "{} {} {} {}".format(maker_name, model_name_en, grade_name_en,number))
             catalog_information = get_grade_info.html.find(".box_presentSpec", first=True)
             old_price = catalog_information.find(".oldCar", first=True).find(".price")[1].text
-            print("Old Car Price :- {}".format(old_price))
-            print("-----------------------------------")
-            print()
 
-            grade_id = saveGrades(mydb, variant_id, grade_name, grade_name_en, grade_url, number, grade_heading, grade_heading_en, main_img_url, model, displacement, number_of_doors, shift, drive_system, capacity, fuel_consumption, new_price, old_price)
+            grade_id = saveGrades(mydb, variant_id, grade_name, grade_name_en, grade_url, number, grade_heading, grade_heading_en, main_grade_image_url, model, displacement, number_of_doors, shift, drive_system, capacity, fuel_consumption, new_price, old_price)
 
             thumb_images = get_grade_info.html.find(".photo_thumb02", first=True).find("ul", first=True).find("li")
             images = []
             for image in thumb_images:
                 image_url = image.xpath("//img/@src", first=True)
                 images.append(image_url)
-
+            img_counter = 1
             for img in images:
-                print(img)
-                print("----------------------")
-                saveGradeImages(mydb, grade_id, img)
+                sub_image_url = saveImageToS3Bucket.saveImageToBucket(img,
+                                                      "{} {} {} {}_{}".format(maker_name, model_name_en, grade_name_en,
+                                                                           number,img_counter))
+                saveGradeImages(mydb, grade_id, sub_image_url)
+                img_counter = img_counter + 1
 
             main = get_grade_info.html.find("#main", first=True).find(".box_roundGray")
             for data in main:
@@ -175,12 +162,5 @@ for row in records:
                         except:
                             continue
 
-                        print("Grade Id :- {}".format(grade_id))
-                        print(heading_jp)
-                        print(heading_en)
-                        print(label_jp)
-                        print(label_en)
-                        print(val_jp)
-                        print(val_en)
-                        print("=============================")
                         saveGradeSpecification(mydb, grade_id, heading_jp, heading_en, label_jp, label_en, val_jp, val_en)
+            print("Maker - : {} | Model -: {} | Variant -: {} | Grade -: {}".format(maker_name,model_name_en,title_en,grade_name))

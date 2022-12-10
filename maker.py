@@ -93,11 +93,6 @@ for cols in columns:
             maker_url = "{}".format(maker_href)
             maker_name_en = translate(maker_name).title()
             print("Maker Name -: {}".format(maker_name))
-            print("Maker Name English -: {}".format(maker_name_en))
-            print("Country Name -: {}".format(country_name))
-            print("Country Name English -: {}".format(country_name_en))
-            print("Maker Url -: {}".format(maker_url))
-            print("==============================================")
             saveMakers(mydb, country_name_en, country_name, maker_name_en, maker_name, maker_url)
 
 driver.quit()
