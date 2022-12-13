@@ -47,6 +47,13 @@ def saveGradeSpecification(mydb, grade_id, heading_jp, heading_en, label_jp, lab
     mycursor.execute(sql, val)
     mydb.commit()
 
+def saveGradeColor(mydb, grade_id, color_system_jp, color_system_en, manufacturer_standard_jp, manufacturer_standard_en, manufacturer_option_jp, manufacturer_option_en):
+    mycursor = mydb.cursor()
+    sql = "INSERT INTO grade_color(grade_id,color_system_jp,color_system_en,manufacturer_standard_jp,manufacturer_standard_en,manufacturer_option_jp,manufacturer_option_en) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    val = (grade_id, color_system_jp, color_system_en, manufacturer_standard_jp, manufacturer_standard_en, manufacturer_option_jp, manufacturer_option_en)
+    mycursor.execute(sql, val)
+    mydb.commit()
+
 def translate(word):
     try:
         translator = Translator()
@@ -147,12 +154,29 @@ for row in records:
                     heading_jp = data.find("h2", first=True).text
                     heading_en = translate(heading_jp)
                 except:
-                    heading_jp = None
-                    heading_en = None
+                    continue
 
                 if "ボディカラー" in heading_jp:
-                    pass
-                    # code for body color
+                    body_color = data.find(".box_color", first=True).find("table", first=True).find("tr")
+                    for colors in body_color:
+                        color_data = colors.find("td")
+                        color_datas = []
+                        for c_data in color_data:
+                            data = c_data.text
+                            color_datas.append(data)
+
+                        if len(color_datas) > 0:
+                            color_system_jp = color_datas[0]
+                            color_system_en = translate(color_system_jp)
+                            manufacturer_standard_jp = color_datas[1]
+                            manufacturer_standard_en = translate(manufacturer_standard_jp)
+                            manufacturer_option_jp = color_datas[2]
+                            manufacturer_option_en = translate(manufacturer_option_jp)
+                        else:
+                            continue
+
+                        saveGradeColor(mydb, grade_id, color_system_jp, color_system_en, manufacturer_standard_jp, manufacturer_standard_en, manufacturer_option_jp, manufacturer_option_en)
+                        print("Color System :- {} | Manufacturer Standard :- {} | Manufacturer Option :- {}".format(color_system_en, manufacturer_standard_en, manufacturer_option_en))
                 else:
                     car_info = data.find(".column")
                     for table in car_info:
