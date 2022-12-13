@@ -81,7 +81,7 @@ for row in records:
         title = item.find("h2", first=True).text
         title_en = translate(title)
         variant_image_raw_url = item.find(".box_roundWhite", first=True).find(".img", first=True).xpath("//img/@src", first=True)
-        variant_image_url = saveImageToS3Bucket.saveImageToBucket(variant_image_raw_url, "{} {}".format(model_name_en, title_en))
+        variant_image_url = saveImageToS3Bucket.saveImageToBucket(variant_image_raw_url,title_en)
         description = item.find(".txt", first=True).text
         description_en = translate(description)
         variant_id = saveVariants(mydb, model_id, title, title_en, variant_image_url, description, description_en)
@@ -163,4 +163,4 @@ for row in records:
                             continue
 
                         saveGradeSpecification(mydb, grade_id, heading_jp, heading_en, label_jp, label_en, val_jp, val_en)
-            print("Maker - : {} | Model -: {} | Variant -: {} | Grade -: {}".format(maker_name,model_name_en,title_en,grade_name))
+            print("Maker - : {} | Model -: {} | Variant -: {} | Grade -: {}".format(maker_name,model_name_en,title_en,grade_name_en))

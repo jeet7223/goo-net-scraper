@@ -32,7 +32,7 @@ def translate(word):
         translator.raise_Exception = True
         response = translator.translate(word, dest="en")
         return response.text
-    except IndexError:
+    except:
         return word
 
 
