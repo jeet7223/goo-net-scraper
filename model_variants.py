@@ -150,17 +150,22 @@ for row in records:
                     heading_jp = None
                     heading_en = None
 
-                car_info = data.find(".column")
-                for table in car_info:
-                    row = table.find("tr")
-                    for value in row:
-                        try:
-                            label_jp = value.find("th", first=True).text
-                            label_en = translate(label_jp)
-                            val_jp = value.find("td", first=True).text
-                            val_en = translate(val_jp)
-                        except:
-                            continue
+                if "ボディカラー" in heading_jp:
+                    pass
+                    # code for body color
+                else:
+                    car_info = data.find(".column")
+                    for table in car_info:
+                        row = table.find("tr")
+                        for value in row:
+                            try:
+                                label_jp = value.find("th", first=True).text
+                                label_en = translate(label_jp)
+                                val_jp = value.find("td", first=True).text
+                                val_en = translate(val_jp)
+                            except:
+                                continue
 
-                        saveGradeSpecification(mydb, grade_id, heading_jp, heading_en, label_jp, label_en, val_jp, val_en)
+                            saveGradeSpecification(mydb, grade_id, heading_jp, heading_en, label_jp, label_en, val_jp,
+                                                   val_en)
             print("Maker - : {} | Model -: {} | Variant -: {} | Grade -: {}".format(maker_name,model_name_en,title_en,grade_name_en))
