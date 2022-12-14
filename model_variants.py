@@ -176,7 +176,6 @@ for row in records:
                             continue
 
                         saveGradeColor(mydb, grade_id, color_system_jp, color_system_en, manufacturer_standard_jp, manufacturer_standard_en, manufacturer_option_jp, manufacturer_option_en)
-                        print("Color System :- {} | Manufacturer Standard :- {} | Manufacturer Option :- {}".format(color_system_en, manufacturer_standard_en, manufacturer_option_en))
                 else:
                     car_info = data.find(".column")
                     for table in car_info:
