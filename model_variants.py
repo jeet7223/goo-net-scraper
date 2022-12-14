@@ -26,10 +26,10 @@ def saveVariants(mydb, model_id, title, title_en, image_url, description, descri
     return mycursor.lastrowid
 
 
-def saveGrades(mydb, model_variant_id, grade_name, grade_name_en, grade_url, number, grade_heading_jp, grade_heading_en, main_img_url, model, displacement, number_of_doors, shift, drive_system, capacity, fuel_consumption, new_price, old_price):
+def saveGrades(mydb, model_variant_id, grade_name, grade_name_en, grade_url, number, grade_heading_jp, grade_heading_en, main_img_url, model_jp, model_en, displacement_jp, displacement_en, number_of_doors_jp, number_of_doors_en, shift_jp, shift_en, drive_system_jp, drive_system_en, capacity_jp, capacity_en, fuel_consumption_jp, fuel_consumption_en, new_price, old_price):
     mycursor = mydb.cursor()
-    sql = "INSERT INTO grades(model_variant_id,grade_name_jp,grade_name_en,grade_url,number,grade_heading_jp,grade_heading_en,main_img_url,model,displacement,number_of_doors,shift,drive_system,capacity,fuel_consumption,new_price,old_price) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-    val = (model_variant_id, grade_name, grade_name_en, grade_url, number, grade_heading_jp, grade_heading_en, main_img_url, model, displacement, number_of_doors, shift, drive_system, capacity, fuel_consumption, new_price, old_price)
+    sql = "INSERT INTO grades(model_variant_id,grade_name_jp,grade_name_en,grade_url,number,grade_heading_jp,grade_heading_en,main_img_url,model_jp,model_en,displacement_jp,displacement_en,number_of_doors_jp,number_of_doors_en,shift_jp,shift_en,drive_system_jp,drive_system_en,capacity_jp,capacity_en,fuel_consumption_jp,fuel_consumption_en,new_price,old_price) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    val = (model_variant_id, grade_name, grade_name_en, grade_url, number, grade_heading_jp, grade_heading_en, main_img_url, model_jp, model_en, displacement_jp, displacement_en, number_of_doors_jp, number_of_doors_en, shift_jp, shift_en, drive_system_jp, drive_system_en, capacity_jp, capacity_en, fuel_consumption_jp, fuel_consumption_en, new_price, old_price)
     mycursor.execute(sql, val)
     mydb.commit()
     return mycursor.lastrowid
@@ -108,13 +108,20 @@ for row in records:
             if len(grade_array) > 0:
                 grade_name = grade_array[0]
                 grade_name_en = translate(grade_name)
-                model = grade_array[1]
-                displacement = grade_array[2]
-                number_of_doors = grade_array[3]
-                shift = grade_array[4]
-                drive_system = grade_array[5]
-                capacity = grade_array[6]
-                fuel_consumption = grade_array[7]
+                model_jp = grade_array[1]
+                model_en = translate(model_jp)
+                displacement_jp = grade_array[2]
+                displacement_en = translate(displacement_jp)
+                number_of_doors_jp = grade_array[3]
+                number_of_doors_en = translate(number_of_doors_jp)
+                shift_jp = grade_array[4]
+                shift_en = translate(shift_jp)
+                drive_system_jp = grade_array[5]
+                drive_system_en = translate(drive_system_jp)
+                capacity_jp = grade_array[6]
+                capacity_en = translate(capacity_jp)
+                fuel_consumption_jp = grade_array[7]
+                fuel_consumption_en = translate(fuel_consumption_jp)
                 new_price = grade_array[8].replace("円", "")
             else:
                 continue
@@ -133,7 +140,7 @@ for row in records:
             catalog_information = get_grade_info.html.find(".box_presentSpec", first=True)
             old_price = catalog_information.find(".oldCar", first=True).find(".price")[1].text
 
-            grade_id = saveGrades(mydb, variant_id, grade_name, grade_name_en, grade_url, number, grade_heading, grade_heading_en, main_grade_image_url, model, displacement, number_of_doors, shift, drive_system, capacity, fuel_consumption, new_price, old_price)
+            grade_id = saveGrades(mydb, variant_id, grade_name, grade_name_en, grade_url, number, grade_heading, grade_heading_en, main_grade_image_url, model_jp, model_en, displacement_jp, displacement_en, number_of_doors_jp, number_of_doors_en, shift_jp, shift_en, drive_system_jp, drive_system_en, capacity_jp, capacity_en, fuel_consumption_jp, fuel_consumption_en, new_price, old_price)
 
             thumb_images = get_grade_info.html.find(".photo_thumb02", first=True).find("ul", first=True).find("li")
             images = []
