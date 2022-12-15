@@ -138,7 +138,7 @@ for row in records:
 
             main_grade_image_url = saveImageToS3Bucket.saveImageToBucket(main_grade_image_raw_url, "{} {} {} {}".format(maker_name, model_name_en, grade_name_en,number))
             catalog_information = get_grade_info.html.find(".box_presentSpec", first=True)
-            old_price = catalog_information.find(".oldCar", first=True).find(".price")[1].text
+            old_price = catalog_information.find(".oldCar .info", first=True).text.replace('中古車価格帯','')
 
             grade_id = saveGrades(mydb, variant_id, grade_name, grade_name_en, grade_url, number, grade_heading, grade_heading_en, main_grade_image_url, model_jp, model_en, displacement_jp, displacement_en, number_of_doors_jp, number_of_doors_en, shift_jp, shift_en, drive_system_jp, drive_system_en, capacity_jp, capacity_en, fuel_consumption_jp, fuel_consumption_en, new_price, old_price)
 
