@@ -90,7 +90,7 @@ for row in records:
         variant_image_raw_url = item.find(".box_roundWhite", first=True).find(".img", first=True).xpath("//img/@src", first=True)
         variant_image_url = saveImageToS3Bucket.saveImageToBucket(variant_image_raw_url,title_en)
         description = item.find(".txt", first=True).text
-        description_en = translate(description)
+        description_en = "-"
         variant_id = saveVariants(mydb, model_id, title, title_en, variant_image_url, description, description_en)
 
         product_table = item.find(".bgTop", first=True).find(".grade")
@@ -109,19 +109,19 @@ for row in records:
                 grade_name = grade_array[0]
                 grade_name_en = translate(grade_name)
                 model_jp = grade_array[1]
-                model_en = translate(model_jp)
+                model_en = "-"
                 displacement_jp = grade_array[2]
-                displacement_en = translate(displacement_jp)
+                displacement_en = "-"
                 number_of_doors_jp = grade_array[3]
-                number_of_doors_en = translate(number_of_doors_jp)
+                number_of_doors_en = "-"
                 shift_jp = grade_array[4]
-                shift_en = translate(shift_jp)
+                shift_en = "-"
                 drive_system_jp = grade_array[5]
-                drive_system_en = translate(drive_system_jp)
+                drive_system_en = "-"
                 capacity_jp = grade_array[6]
-                capacity_en = translate(capacity_jp)
+                capacity_en = "-"
                 fuel_consumption_jp = grade_array[7]
-                fuel_consumption_en = translate(fuel_consumption_jp)
+                fuel_consumption_en = "-"
                 new_price = grade_array[8].replace("円", "")
             else:
                 continue
@@ -131,7 +131,7 @@ for row in records:
 
             get_grade_info = session.get(grade_url)
             grade_heading = get_grade_info.html.find(".tit_first", first=True).find("h2", first=True).text
-            grade_heading_en = translate(grade_heading)
+            grade_heading_en = "-"
 
 
             main_grade_image_raw_url = get_grade_info.html.find("#car_img_main", first=True).xpath("//img/@src", first=True)
@@ -159,7 +159,7 @@ for row in records:
             for data in main:
                 try:
                     heading_jp = data.find("h2", first=True).text
-                    heading_en = translate(heading_jp)
+                    heading_en = "-"
                 except:
                     continue
 
@@ -174,11 +174,11 @@ for row in records:
 
                         if len(color_datas) > 0:
                             color_system_jp = color_datas[0]
-                            color_system_en = translate(color_system_jp)
+                            color_system_en = "-"
                             manufacturer_standard_jp = color_datas[1]
-                            manufacturer_standard_en = translate(manufacturer_standard_jp)
+                            manufacturer_standard_en = "-"
                             manufacturer_option_jp = color_datas[2]
-                            manufacturer_option_en = translate(manufacturer_option_jp)
+                            manufacturer_option_en = "-"
                         else:
                             continue
 
@@ -190,9 +190,9 @@ for row in records:
                         for value in row:
                             try:
                                 label_jp = value.find("th", first=True).text
-                                label_en = translate(label_jp)
+                                label_en = "-"
                                 val_jp = value.find("td", first=True).text
-                                val_en = translate(val_jp)
+                                val_en = "-"
                             except:
                                 continue
 
