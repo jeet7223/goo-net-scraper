@@ -136,7 +136,7 @@ for row in records:
 
             main_grade_image_raw_url = get_grade_info.html.find("#car_img_main", first=True).xpath("//img/@src", first=True)
 
-            main_grade_image_url =  saveImageToS3Bucket.saveImageToBucket(main_grade_image_raw_url, "{} {} {} {}".format(maker_name, model_name_en, grade_name_en,number))
+            main_grade_image_url = saveImageToS3Bucket.saveImageToBucket(main_grade_image_raw_url, "{} {} {} {}".format(maker_name, model_name_en, grade_name_en,number))
             catalog_information = get_grade_info.html.find(".box_presentSpec", first=True)
             old_price = catalog_information.find(".oldCar", first=True).find(".price")[1].text
 
