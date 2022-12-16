@@ -36,18 +36,22 @@ for row in records:
     model_name_en = row["model_name_en"]
     supplier_response = session.get(url)
     product = supplier_response.html.find("#main", first=True).find(".box_gradeList")
+    grades = []
     for item in product:
         product_table = item.find(".bgTop", first=True).find(".grade")
         counter = counter + 1
-        # print("Model URL :- {}".format(url))
-        # print("Model Name :- {}".format(model_name_en))
-        # print("Model_variant Found :- {}".format(len(product)))
-        # print("Grade Found :- {}".format(len(product_table)))
-        model_variant = len(product)
-        grades = len(product_table)
-        with open("data.csv", 'a', newline='', encoding="utf8") as csvfile:
-            csvwriter = csv.writer(csvfile)
-            csvwriter.writerow([url, model_name_en, model_variant, grades])
-            print("Models Found :- {}".format(counter))
-            print()
+        grade = len(product_table)
+        grades.append(grade)
+    print("Model Name :- {}".format(model_name_en))
+    model_variant = len(product)
+    print("Model Variant Found :- {}".format(model_variant))
+    ans = sum(grades)
+    print("Grades Found :- {}".format(ans))
+    print("-------------------------------------")
+
+    # with open("data.csv", 'a', newline='', encoding="utf8") as csvfile:
+    #     csvwriter = csv.writer(csvfile)
+    #     csvwriter.writerow([url, model_name_en, model_variant, grades])
+    #     print("Models Found :- {}".format(counter))
+    #     print()
 
