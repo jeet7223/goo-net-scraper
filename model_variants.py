@@ -4,9 +4,10 @@ import configuration
 import saveImageToS3Bucket
 
 session = HTMLSession()
-from googletrans import Translator
+from translate import translate
 import mysql.connector
-
+import boto3
+from botocore.client import Config
 mydb = mysql.connector.connect(
     host=configuration.host,
     user=configuration.user,
@@ -16,7 +17,12 @@ mydb = mysql.connector.connect(
     auth_plugin=configuration.auth_plugin
 )
 cursor = mydb.cursor(dictionary=True)
-
+s3 = boto3.resource(
+    's3',
+    aws_access_key_id=configuration.BUCKET_ACCESS_KEY_ID,
+    aws_secret_access_key=configuration.BUCKET_ACCESS_SECRET_KEY,
+    config=Config(signature_version='s3v4')
+)
 def saveVariants(mydb, model_id, title, title_en, image_url, description, description_en):
     mycursor = mydb.cursor()
     sql = "INSERT INTO model_variants(model_id,title_jp,title_en,img_url,description_jp,description_en) VALUES (%s, %s, %s, %s, %s, %s)"
@@ -54,14 +60,6 @@ def saveGradeColor(mydb, grade_id, color_system_jp, color_system_en, manufacture
     mycursor.execute(sql, val)
     mydb.commit()
 
-def translate(word):
-    try:
-        translator = Translator()
-        translator.raise_Exception = True
-        response = translator.translate(word, dest="en")
-        return response.text
-    except:
-        return word
 
 
 def getMakerName(maker_id):
@@ -75,6 +73,7 @@ sql_select_query = "select * from models"
 cursor.execute(sql_select_query)
 records = cursor.fetchall()
 
+model_counter = 1
 for row in records:
     url = row["model_url"]
     model_id = row["id"]
@@ -87,8 +86,13 @@ for row in records:
     for item in product:
         title = item.find("h2", first=True).text
         title_en = translate(title)
-        variant_image_raw_url = item.find(".box_roundWhite", first=True).find(".img", first=True).xpath("//img/@src", first=True)
-        variant_image_url = saveImageToS3Bucket.saveImageToBucket(variant_image_raw_url,title_en)
+        try:
+            variant_image_raw_url = item.find(".box_roundWhite", first=True).find(".img", first=True).xpath(
+                "//img/@src", first=True)
+            variant_image_url = saveImageToS3Bucket.saveImageToBucket(variant_image_raw_url, title_en,s3)
+        except:
+            variant_image_url = None
+
         description = item.find(".txt", first=True).text
         description_en = "-"
         variant_id = saveVariants(mydb, model_id, title, title_en, variant_image_url, description, description_en)
@@ -134,26 +138,40 @@ for row in records:
             grade_heading_en = "-"
 
 
-            main_grade_image_raw_url = get_grade_info.html.find("#car_img_main", first=True).xpath("//img/@src", first=True)
+            try:
+                main_grade_image_raw_url = get_grade_info.html.find("#car_img_main", first=True).xpath("//img/@src",
+                                                                                                       first=True)
 
-            main_grade_image_url = saveImageToS3Bucket.saveImageToBucket(main_grade_image_raw_url, "{} {} {} {}".format(maker_name, model_name_en, grade_name_en,number))
+                main_grade_image_url = saveImageToS3Bucket.saveImageToBucket(main_grade_image_raw_url,
+                                                                             "{} {} {} {}".format(maker_name,
+                                                                                                  model_name_en,
+                                                                                                  grade_name_en,
+                                                                                                  number),s3)
+            except:
+                main_grade_image_url = None
             catalog_information = get_grade_info.html.find(".box_presentSpec", first=True)
             old_price = catalog_information.find(".oldCar .info", first=True).text.replace('中古車価格帯','')
 
             grade_id = saveGrades(mydb, variant_id, grade_name, grade_name_en, grade_url, number, grade_heading, grade_heading_en, main_grade_image_url, model_jp, model_en, displacement_jp, displacement_en, number_of_doors_jp, number_of_doors_en, shift_jp, shift_en, drive_system_jp, drive_system_en, capacity_jp, capacity_en, fuel_consumption_jp, fuel_consumption_en, new_price, old_price)
 
-            thumb_images = get_grade_info.html.find(".photo_thumb02", first=True).find("ul", first=True).find("li")
-            images = []
-            for image in thumb_images:
-                image_url = image.xpath("//img/@src", first=True)
-                images.append(image_url)
-            img_counter = 1
-            for img in images:
-                sub_image_url = saveImageToS3Bucket.saveImageToBucket(img,
-                                                      "{} {} {} {}_{}".format(maker_name, model_name_en, grade_name_en,
-                                                                           number,img_counter))
-                saveGradeImages(mydb, grade_id, sub_image_url)
-                img_counter = img_counter + 1
+            try:
+                thumb_images = get_grade_info.html.find(".photo_thumb02", first=True).find("ul", first=True).find("li")
+                images = []
+                for image in thumb_images:
+                    image_url = image.xpath("//img/@src", first=True)
+                    images.append(image_url)
+                img_counter = 1
+                for img in images:
+                    sub_image_url = saveImageToS3Bucket.saveImageToBucket(img,
+                                                                          "{} {} {} {}_{}".format(maker_name,
+                                                                                                  model_name_en,
+                                                                                                  grade_name_en,
+                                                                                                  number, img_counter),s3 )
+                    saveGradeImages(mydb, grade_id, sub_image_url)
+                    img_counter = img_counter + 1
+            except:
+                print("No images uploaded")
+                pass
 
             main = get_grade_info.html.find("#main", first=True).find(".box_roundGray")
             for data in main:
@@ -198,4 +216,5 @@ for row in records:
 
                             saveGradeSpecification(mydb, grade_id, heading_jp, heading_en, label_jp, label_en, val_jp,
                                                    val_en)
-            print("Maker - : {} | Model -: {} | Variant -: {} | Grade -: {}".format(maker_name,model_name_en,title_en,grade_name_en))
+            print("Maker - : {} | Model -: {} | Variant -: {} | Grade -: {} | Model Counter -: {}/{}".format(maker_name,model_name_en,title_en,grade_name_en,model_counter,len(records)))
+    model_counter = model_counter + 1

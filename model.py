@@ -1,11 +1,12 @@
 import csv
 import mysql.connector
-from googletrans import Translator
+from translate import translate
 from requests_html import HTMLSession
 
 import configuration
 import saveImageToS3Bucket
-
+import boto3
+from botocore.client import Config
 session = HTMLSession()
 
 
@@ -17,7 +18,12 @@ mydb = mysql.connector.connect(
     charset=configuration.charset,
     auth_plugin=configuration.auth_plugin
 )
-
+s3 = boto3.resource(
+    's3',
+    aws_access_key_id=configuration.BUCKET_ACCESS_KEY_ID,
+    aws_secret_access_key=configuration.BUCKET_ACCESS_SECRET_KEY,
+    config=Config(signature_version='s3v4')
+)
 def saveModels(mydb, maker_id, model_name, model_name_en, model_url, model_img_url):
     mycursor = mydb.cursor()
     sql = "INSERT INTO models(maker_id,model_name_jp,model_name_en,model_url,model_img_url) VALUES (%s, %s, %s, %s, %s)"
@@ -26,14 +32,6 @@ def saveModels(mydb, maker_id, model_name, model_name_en, model_url, model_img_u
     mydb.commit()
 
 
-def translate(word):
-    try:
-        translator = Translator()
-        translator.raise_Exception = True
-        response = translator.translate(word, dest="en")
-        return response.text
-    except:
-        return word
 
 
 sql_select_query = "select * from makers"
@@ -62,7 +60,7 @@ for row in records:
                 model_name = item.find(".model", first=True).text
                 model_name_en = translate(model_name).title()
                 model_raw_url = item.find("figure", first=True).xpath("//img/@data-original", first=True)
-                model_img_url = saveImageToS3Bucket.saveImageToBucket(model_raw_url,"{} {}".format(maker_name,model_name_en))
+                model_img_url = saveImageToS3Bucket.saveImageToBucket(model_raw_url,"{} {}".format(maker_name,model_name_en),s3)
                 if model_url in models_urls:
                     continue
                 else:
